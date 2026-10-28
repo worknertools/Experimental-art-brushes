@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Type play</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Rough Feeling Graphics - High-Res Pro Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <style>
+        :root {
+            /* 浅蓝灰颜色 */
+            --bg-page: #dbe5e6;        
+            --bg-card: #ffffff;
+            --border-color: #e0ddd5;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        /* 锁定显示：初始隐藏，待准备就绪后整体显示 */
+        body {
+            margin: 0; background-color: var(--bg-page);
+            font-family: var(--font-sans); display: flex;
+            justify-content: center; align-items: center;     
+            min-height: 100vh; color: #000; overflow: hidden;
+            visibility: hidden; 
+        }
+        .container {
+            display: flex; width: 1280px; max-width: 98vw;
+            height: 940px; gap: 60px; align-items: center; justify-content: center;
+        }
+        #canvas-container { flex: 0 0 700px; height: 933px; display: flex; align-items: center; justify-content: center; position: relative; }
+        canvas { background-color: #fff; box-shadow: none; cursor: default; }
+        .sidebar { flex: 0 0 320px; display: flex; flex-direction: column; gap: 15px; height: 933px; }
+        .box { background: var(--bg-card); border: none; padding: 24px 20px; overflow-y: auto; flex-grow: 1; }
+        .label { font-size: 11px; font-weight: 700; margin-bottom: 12px; display: block; letter-spacing: 0.8px; text-transform: uppercase; color: #444; }
+        .section-divider { margin-top: 25px; }
+        .nav-link { font-size: 22px; color: #000; text-decoration: none; margin-bottom: 10px; display: inline-block; font-weight: 800; line-height: 1.1; text-transform: none; letter-spacing: -0.2px; }
+        .color-group { display: flex; flex-direction: row; justify-content: space-between; margin-top: 5px; }
+        .color-item { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+        .color-item span { font-size: 10px; font-weight: 600; }
+        .color-row { display: flex; align-items: center; gap: 4px; }
+        .preset-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; }
+        .custom-picker-wrap { position: relative; width: 14px; height: 14px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); }
+        #brush-picker-ui { background: #000000; }
+        #bg-picker-ui { background: #ffffff; } 
+        input[type="color"].custom-picker { position: absolute; top: -5px; left: -5px; width: 24px; height: 24px; cursor: pointer; border: none; padding: 0; background: transparent; opacity: 0; }
+        .slider-wrap { margin-bottom: 18px; } 
+        .slider-info { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; margin-bottom: 6px; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 1px; background: #000; outline: none; margin: 12px 0; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #fff; border: 1.5px solid #000; border-radius: 50%; cursor: pointer; }
+        .btn-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+        .btn-ui { padding: 9px 1px; border: 1px solid var(--border-color); background: #fff; font-family: var(--font-sans); font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
+        .btn-ui.active { background: #000; color: #fff; }
+        .btn-black { background: #000; color: #fff; border: none; }
+        .footer-action-wrap { margin-top: 5px; display: flex; gap: 8px; }
+        .btn-undo, .btn-clear { flex: 1; padding: 12px 5px; background: #808080; border: none; color: #fff; font-family: var(--font-sans); font-size: 11px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
+        .btn-undo:active, .btn-clear:active { background: #000; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="canvas-container"></div>
+    <div class="sidebar">
+        <div class="nav-link">Rough Feeling Graphics<br>Drawing Tool</div>
+        <div class="box">
+            <span class="label">COLOR SETTINGS 颜色设置</span>
+            <div class="color-group">
+                <div class="color-item">
+                    <span>BRUSH 画笔</span>
+                    <div class="color-row">
+                        <div class="preset-dot" style="background:#000000" onclick="quickSetBrush('#000000')"></div>
+                        <div class="preset-dot" style="background:#00c3ff" onclick="quickSetBrush('#00c3ff')"></div>
+                        <div class="preset-dot" style="background:#ff4d00" onclick="quickSetBrush('#ff4d00')"></div>
+                        <div class="preset-dot" style="background:#ffb2c1" onclick="quickSetBrush('#ffb2c1')"></div>
+                        <div class="preset-dot" style="background:#ffd000" onclick="quickSetBrush('#ffd000')"></div>
+                        <div class="custom-picker-wrap" id="brush-picker-ui"><input type="color" class="custom-picker" id="pick-brush" value="#000000" oninput="quickSetBrush(this.value)"></div>
+                    </div>
+                </div>
+                <div class="color-item">
+                    <span>CANVAS 画布</span>
+                    <div class="color-row">
+                        <div class="preset-dot" style="background:#ffffff" onclick="quickSetBg('#ffffff')"></div>
+                        <div class="preset-dot" style="background:#d8d3c7" onclick="quickSetBg('#d8d3c7')"></div>
+                        <div class="preset-dot" style="background:#c5c9c7" onclick="quickSetBg('#c5c9c7')"></div>
+                        <div class="preset-dot" style="background:#c9b9b5" onclick="quickSetBg('#c9b9b5')"></div>
+                        <div class="preset-dot" style="background:#f2d5d5" onclick="quickSetBg('#f2d5d5')"></div>
+                        <div class="custom-picker-wrap" id="bg-picker-ui"><input type="color" class="custom-picker" id="pick-bg" value="#ffffff" oninput="quickSetBg(this.value)"></div>
+                    </div>
+                </div>
+            </div>
+        <span class="label section-divider">Brush Style 笔触模式</span>
+        <div class="btn-group">
+            <button id="mode-ribbon" class="btn-ui active" onclick="setMode('ribbon')">马克</button>
+            <button id="mode-pixel" class="btn-ui" onclick="setMode('pixel')">像素</button>
+            <button id="mode-flat" class="btn-ui" onclick="setMode('flat')">哥特</button>
+            <button id="mode-marker" class="btn-ui" onclick="setMode('marker')">平笔</button>
+            <button id="mode-ink" class="btn-ui" onclick="setMode('ink')">墨韵</button>
+            <button id="mode-blocky" class="btn-ui" onclick="setMode('blocky')">方块</button>
+            <button id="mode-beads" class="btn-ui" onclick="setMode('beads')">圆珠</button>
+            <button id="mode-rail" class="btn-ui" onclick="setMode('rail')">双轨</button>
+            <button id="mode-checker" class="btn-ui" onclick="setMode('checker')">棋盘</button>
+            <button id="mode-wire" class="btn-ui" onclick="setMode('wire')">缠绕</button>
+            <button id="mode-scribble" class="btn-ui" onclick="setMode('scribble')">乱线</button>
+            <button id="mode-tube" class="btn-ui" onclick="setMode('tube')">管乱</button>
+        </div>
+        <div class="slider-wrap section-divider">
+            <div class="slider-info"><span>BRUSH SIZE 画笔大小</span><span id="val-weight">12px</span></div>
+            <input type="range" id="weight" min="1" max="150" value="12" step="1">
+        </div>
+        <div id="rough-wrap" class="slider-wrap">
+            <div class="slider-info"><span>GAP RATIO 缝隙比例</span><span id="val-rough">50%</span></div>
+            <input type="range" id="roughness" min="5" max="95" value="50" step="1">
+        </div>
+        <span class="label section-divider">Export 保存文件</span>
+        <div class="btn-group">
+            <button class="btn-ui btn-black" onclick="exportHighRes('jpg')">JPG</button>
+            <button class="btn-ui btn-black" onclick="exportHighRes('png')">PNG</button>
+            <button class="btn-ui btn-black" onclick="exportSVG()">SVG</button>
+        </div>
+    </div>
+    <div class="footer-action-wrap">
+        <button class="btn-undo" onclick="undo()">返回上步</button>
+        <button class="btn-clear" onclick="clearCanvas()">清空画布</button>
+    </div>
+</div>
+</div>
+<script>
+    let paths = []; 
+    let currentPath = [];
+    let currentSeed = 0; 
+    let brushMode = 'ribbon';
+    let bColor = '#000000'; 
+    let bgColor = '#ffffff'; 
+    let strokeLayer, bgLayer, draftLayer;
+
+    // ----- 平滑路径 -----
+    function getSmoothedPath(points) {
+        if (points.length < 3) return points;
+        let pts = points;
+        for (let iter = 0; iter < 3; iter++) {
+            let newPts = [];
+            newPts.push(pts[0]);
+            for (let i = 0; i < pts.length - 1; i++) {
+                let p0 = pts[i], p1 = pts[i + 1];
+                newPts.push({x: p0.x * 0.75 + p1.x * 0.25, y: p0.y * 0.75 + p1.y * 0.25});
+                newPts.push({x: p0.x * 0.25 + p1.x * 0.75, y: p0.y * 0.25 + p1.y * 0.75});
+            }
+            newPts.push(pts[pts.length - 1]);
+            pts = newPts;
+        }
+        return pts;
+    }
+
+    // ----- 通用补间与法线生成 -----
+    function getDPts(points, p5Target) {
+        let normals = [];
+        for(let i=0; i<points.length; i++) {
+            let prev = i > 0 ? points[i-1] : points[i];
+            let next = i < points.length - 1 ? points[i+1] : points[i];
+            let dx = next.x - prev.x;
+            let dy = next.y - prev.y;
+            let len = p5Target.dist(0,0,dx,dy);
+            if (len === 0) normals.push({x:0, y:1});
+            else normals.push({x: -dy/len, y: dx/len});
+        }
+
+        let dPts = [];
+        if (points.length > 0) dPts.push({ x: points[0].x, y: points[0].y, dist: 0, nx: normals[0].x, ny: normals[0].y });
+        
+        let distCovered = 0;
+        for (let i = 1; i < points.length; i++) {
+            let p1 = points[i-1], p2 = points[i];
+            let n1 = normals[i-1], n2 = normals[i];
+            let dV = p5Target.dist(p1.x, p1.y, p2.x, p2.y);
+            if (dV === 0) continue;
+            let stps = Math.max(1, Math.ceil(dV / 2));
+            for (let j = 1; j <= stps; j++) {
+                let tr = j / stps;
+                let cx = p5Target.lerp(p1.x, p2.x, tr);
+                let cy = p5Target.lerp(p1.y, p2.y, tr);
+                let cnx = p5Target.lerp(n1.x, n2.x, tr);
+                let cny = p5Target.lerp(n1.y, n2.y, tr);
+                let clen = p5Target.dist(0,0,cnx,cny) || 1;
+                distCovered += (dV / stps);
+                dPts.push({ x: cx, y: cy, dist: distCovered, nx: cnx/clen, ny: cny/clen });
+            }
+        }
+        return dPts;
+    }
+
+    // ----- 双线且带圆头闭合环生成 -----
+    function getDoubleLineLoop(dPts, p5Target, maxR, bRough) {
+        if (dPts.length < 2) return [];
+        let baseOff = maxR * 0.5;
+        let nRange = maxR * (0.2 + bRough * 1.2);
+        
+        let off0 = [];
+        let off1 = [];
+        for(let i=0; i<dPts.length; i++) {
+            let pt = dPts[i];
+            let o0 = baseOff + (p5Target.noise(pt.dist * 0.015, 100) - 0.5) * nRange;
+            let o1 = -baseOff + (p5Target.noise(pt.dist * 0.015, 200) - 0.5) * nRange;
+            off0.push(o0);
+            off1.push(o1);
+        }
+        
+        let loop = [];
+        for(let i=0; i<dPts.length; i++) {
+            let pt = dPts[i];
+            loop.push({ x: pt.x + pt.nx * off0[i], y: pt.y + pt.ny * off0[i] });
+        }
+        
+        let endPt = dPts[dPts.length - 1];
+        let p0_end = loop[loop.length - 1];
+        let p1_end = { x: endPt.x + endPt.nx * off1[dPts.length - 1], y: endPt.y + endPt.ny * off1[dPts.length - 1] };
+        let t_fwd = { x: endPt.ny, y: -endPt.nx };
+        
+        let steps = 6;
+        for(let i=1; i<steps; i++) {
+            let theta = (i / steps) * Math.PI;
+            let cx = (p0_end.x + p1_end.x)/2;
+            let cy = (p0_end.y + p1_end.y)/2;
+            let vx = p0_end.x - cx;
+            let vy = p0_end.y - cy;
+            let r = Math.sqrt(vx*vx + vy*vy);
+            loop.push({
+                x: cx + vx * Math.cos(theta) + t_fwd.x * r * Math.sin(theta),
+                y: cy + vy * Math.cos(theta) + t_fwd.y * r * Math.sin(theta)
+            });
+        }
+        
+        for(let i=dPts.length - 1; i>=0; i--) {
+            let pt = dPts[i];
+            loop.push({ x: pt.x + pt.nx * off1[i], y: pt.y + pt.ny * off1[i] });
+        }
+        
+        let startPt = dPts[0];
+        let p0_start = loop[loop.length - 1];
+        let p1_start = loop[0];
+        let t_bwd = { x: -startPt.ny, y: startPt.nx };
+        
+        for(let i=1; i<steps; i++) {
+            let theta = (i / steps) * Math.PI;
+            let cx = (p0_start.x + p1_start.x)/2;
+            let cy = (p0_start.y + p1_start.y)/2;
+            let vx = p0_start.x - cx;
+            let vy = p0_start.y - cy;
+            let r = Math.sqrt(vx*vx + vy*vy);
+            loop.push({
+                x: cx + vx * Math.cos(theta) + t_bwd.x * r * Math.sin(theta),
+                y: cy + vy * Math.cos(theta) + t_bwd.y * r * Math.sin(theta)
+            });
+        }
+        return loop;
+    }
+
+    function redrawPaths() {
+        strokeLayer.clear();
+        for (let pathObj of paths) drawStyledPath(pathObj, strokeLayer);
+    }
+
+    function undo() { 
+        if (paths.length > 0) {
+            paths.pop(); 
+            redrawPaths();
+        }
+    }
+
+    function setup() {
+        let cnv = createCanvas(700, 933); 
+        cnv.parent('canvas-container');
+        strokeLayer = createGraphics(700, 933);
+        bgLayer = createGraphics(700, 933);
+        draftLayer = createGraphics(700, 933);
+        updateBackground();
+
+        document.getElementById('weight').oninput = function() { document.getElementById('val-weight').innerText = this.value + 'px'; };
+        document.getElementById('roughness').oninput = function() { document.getElementById('val-rough').innerText = this.value + 'px'; document.getElementById('val-rough').innerText = this.value + '%'; };
+        
+        window.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { undo(); e.preventDefault(); } });
+        
+        document.body.style.visibility = 'visible';
+    }
+
+    function updateBackground() {
+        bgLayer.clear();
+        bgLayer.background(bgColor);
+    }
+
+    function draw() {
+        image(bgLayer, 0, 0);
+        image(strokeLayer, 0, 0);
+        
+        if (mouseIsPressed && mouseButton === LEFT) {
+            let isInside = (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height);
+            if (isInside || currentPath.length > 0) {
+                let addPoint = true;
+                if (currentPath.length > 0) {
+                    let lastPt = currentPath[currentPath.length - 1];
+                    if (dist(lastPt.x, lastPt.y, mouseX, mouseY) < 1) {
+                        addPoint = false;
+                    }
+                }
+                if (addPoint) {
+                    currentPath.push({ x: mouseX, y: mouseY });
+                }
+                
+                draftLayer.clear();
+                drawStyledPath({
+                    points: currentPath, mode: brushMode, weight: parseFloat(document.getElementById('weight').value),
+                    rough: parseFloat(document.getElementById('roughness').value) / 100, seed: currentSeed, color: bColor
+                }, draftLayer);
+                image(draftLayer, 0, 0);
+            }
+        }
+    }
+
+    function quickSetBrush(hex) { bColor = hex; document.getElementById('brush-picker-ui').style.background = hex; document.getElementById('pick-brush').value = hex; }
+    function quickSetBg(hex) { 
+        bgColor = hex; 
+        document.getElementById('bg-picker-ui').style.background = hex; 
+        document.getElementById('pick-bg').value = hex; 
+        updateBackground(); 
+        redrawPaths();
+    }
+
+    function mousePressed() { if(mouseButton === LEFT && mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) currentSeed = Math.floor(Math.random() * 1000000); }
+    
+    function mouseReleased() {
+        if (mouseButton === LEFT && currentPath.length > 0) {
+            let newPath = {
+                points: [...currentPath], mode: brushMode, weight: parseFloat(document.getElementById('weight').value),
+                rough: parseFloat(document.getElementById('roughness').value) / 100, seed: currentSeed, color: bColor
+            };
+            paths.push(newPath);
+            drawStyledPath(newPath, strokeLayer);
+            currentPath = [];
+            draftLayer.clear();
+        }
+    }
+
+    function drawStyledPath(pathObj, target) {
+        if (pathObj.points.length < 2) return;
+        target.push(); target.randomSeed(pathObj.seed); target.noiseSeed(pathObj.seed);
+        target.stroke(pathObj.color); target.fill(pathObj.color);
+        let bSize = pathObj.weight, bRough = pathObj.rough;
+        
+        if (pathObj.mode === 'checker') {
+            target.noStroke(); let g = bSize; let r = bSize * 0.7; let pSet = new Set();
+            for (let i=1; i<pathObj.points.length; i++) {
+                let p1 = pathObj.points[i-1], p2 = pathObj.points[i], d = target.dist(p1.x, p1.y, p2.x, p2.y);
+                if(d === 0) continue;
+                for(let j=0; j<=d; j+=2){ 
+                    let curX = target.lerp(p1.x, p2.x, j/d), curY = target.lerp(p1.y, p2.y, j/d);
+                    for(let ox = -r; ox <= r; ox += g){
+                        for(let oy = -r; oy <= r; oy += g){
+                            let gx = Math.floor((curX + ox)/g), gy = Math.floor((curY + oy)/g);
+                            if((gx + gy) % 2 === 0) { 
+                                let key = `${gx},${gy}`;
+                                if (!pSet.has(key)) { target.rect(gx*g, gy*g, g, g); pSet.add(key); }
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (pathObj.mode === 'ribbon' || pathObj.mode === 'marker') {
+            target.noFill(); let cap = (pathObj.mode === 'marker') ? target.SQUARE : target.ROUND;
+            target.strokeCap(cap); target.strokeJoin(target.ROUND);
+            target.strokeWeight(bSize); target.beginShape(); for (let p of pathObj.points) target.vertex(p.x, p.y); target.endShape();
+        } else if (pathObj.mode === 'pixel') {
+            target.noStroke(); target.fill(pathObj.color);
+            let pSet = new Set();
+            for (let i = 1; i < pathObj.points.length; i++) {
+                let p1 = pathObj.points[i-1], p2 = pathObj.points[i];
+                let d = target.dist(p1.x, p1.y, p2.x, p2.y);
+                if (d === 0) continue;
+                for(let j = 0; j <= d; j += 1) { 
+                    let cx = target.lerp(p1.x, p2.x, j/d);
+                    let cy = target.lerp(p1.y, p2.y, j/d);
+                    let px = Math.floor(cx / bSize) * bSize;
+                    let py = Math.floor(cy / bSize) * bSize;
+                    let key = `${px},${py}`;
+                    if (!pSet.has(key)) { 
+                        target.rect(px, py, bSize, bSize); 
+                        pSet.add(key); 
+                    }
+                }
+            }
+        } else if (pathObj.mode === 'rail') {
+            target.noFill(); target.strokeJoin(target.ROUND); target.strokeCap(target.ROUND);
+            target.stroke(pathObj.color); target.strokeWeight(bSize); 
+            target.beginShape(); for (let p of pathObj.points) target.vertex(p.x, p.y); target.endShape();
+            target.stroke(bgColor); target.strokeWeight(bSize * bRough); 
+            target.beginShape(); for (let p of pathObj.points) target.vertex(p.x, p.y); target.endShape();
+        } else if (pathObj.mode === 'flat') {
+            target.noStroke(); let ang = target.PI/4, dx = target.cos(ang)*(bSize/2), dy = target.sin(ang)*(bSize/2);
+            for (let i = 1; i < pathObj.points.length; i++) {
+                let p1 = pathObj.points[i-1], p2 = pathObj.points[i];
+                target.beginShape(); target.vertex(p1.x-dx, p1.y+dy); target.vertex(p1.x+dx, p1.y-dy); target.vertex(p2.x+dx, p2.y-dy); target.vertex(p2.x-dx, p2.y+dy); target.endShape(target.CLOSE);
+            }
+        } else if (pathObj.mode === 'beads' || pathObj.mode === 'blocky') {
+            target.noStroke(); 
+            let spacing = bRough <= 0.5 ? bSize * (0.1 + bRough * 1.6) : bSize * (0.9 + (bRough - 0.5) * 4.2);
+            let lastD = pathObj.points[0];
+            pathObj.mode === 'beads' ? target.circle(lastD.x, lastD.y, bSize) : target.rect(lastD.x-bSize/2, lastD.y-bSize/2, bSize, bSize);
+            for (let i=1; i<pathObj.points.length; i++) {
+                let p = pathObj.points[i]; if (target.dist(lastD.x, lastD.y, p.x, p.y) > spacing) {
+                    pathObj.mode === 'beads' ? target.circle(p.x, p.y, bSize) : target.rect(p.x-bSize/2, p.y-bSize/2, bSize, bSize); lastD = p;
+                }
+            }
+        } else if (pathObj.mode === 'ink') {
+            target.noFill(); target.strokeCap(target.ROUND); let lW = bSize;
+            for (let i=1; i<pathObj.points.length; i++) {
+                let d = target.dist(pathObj.points[i-1].x, pathObj.points[i-1].y, pathObj.points[i].x, pathObj.points[i].y);
+                lW = target.lerp(lW, target.max(bSize*0.2, bSize-(d*0.8)), 0.4); target.strokeWeight(lW);
+                target.line(pathObj.points[i-1].x, pathObj.points[i-1].y, pathObj.points[i].x, pathObj.points[i].y);
+            }
+        } else if (pathObj.mode === 'wire') {
+            target.noFill(); target.stroke(pathObj.color); 
+            target.strokeJoin(target.ROUND); target.strokeCap(target.ROUND);
+            let wCount = Math.floor(target.map(bRough, 0, 1, 2, 6)); 
+            target.strokeWeight(Math.max(1, bSize * 0.1));
+            for (let w = 0; w < wCount; w++) {
+                target.beginShape();
+                for (let i = 0; i < pathObj.points.length; i++) {
+                    let p = pathObj.points[i];
+                    let nx = p.x + (target.noise(i * 0.1, w * 100) - 0.5) * bSize;
+                    let ny = p.y + (target.noise(i * 0.1 + 1000, w * 100) - 0.5) * bSize;
+                    target.vertex(nx, ny);
+                }
+                target.endShape();
+            }
+        } else if (pathObj.mode === 'scribble') {
+            target.fill(pathObj.color); 
+            target.stroke(pathObj.color); 
+            target.strokeWeight(Math.max(1, bSize * 0.02));
+            target.strokeJoin(target.ROUND); target.strokeCap(target.ROUND);
+            
+            let sPts = getSmoothedPath(pathObj.points);
+            let dPts = getDPts(sPts, target);
+            let loop = getDoubleLineLoop(dPts, target, bSize * 0.45, bRough);
+            if (loop.length > 0) {
+                target.beginShape();
+                for(let i=0; i<loop.length; i++) target.vertex(loop[i].x, loop[i].y);
+                target.endShape(target.CLOSE);
+            }
+        } else if (pathObj.mode === 'tube') {
+            target.noFill(); target.strokeJoin(target.ROUND); target.strokeCap(target.ROUND);
+            
+            let sPts = getSmoothedPath(pathObj.points);
+            if (sPts.length < 2) return;
+            
+            let dPts = getDPts(sPts, target);
+            if (dPts.length < 2) return;
+            
+            // 计算随距离变化的线宽（粗细变化）
+            for (let i = 0; i < dPts.length; i++) {
+                let pt = dPts[i];
+                let n = target.noise(pt.dist * 0.01, pathObj.seed || 0);
+                pt.w = bSize * target.map(n, 0, 1, 0.4, 1.3);
+            }
+            
+            // 粗底
+            target.stroke(pathObj.color);
+            for (let i = 1; i < dPts.length; i++) {
+                target.strokeWeight(dPts[i].w);
+                target.line(dPts[i-1].x, dPts[i-1].y, dPts[i].x, dPts[i].y);
+            }
+            
+            // 内顺线 (顺着画笔轨迹走的内线)
+            target.stroke(bgColor); target.strokeWeight(Math.max(1, Math.pow(bSize, 0.8) * 0.07));
+            
+            let numLines = 2;
+            target.beginShape();
+            let lastX = null, lastY = null;
+            let firstX = null, firstY = null;
+            
+            for (let l = 0; l < numLines; l++) {
+                let phase = target.random(1000);
+                let baseOffRatio = (target.random() - 0.5) * 0.6;
+                let freq = 0.02 + bRough * 0.05;
+                let ampRatio = 0.1 + bRough * 0.2;
+                
+                let linePts = [];
+                for (let i = 0; i < dPts.length; i++) {
+                    let pt = dPts[i];
+                    let noiseVal = (target.noise(pt.dist * freq, phase) - 0.5) * 2;
+                    let offset = baseOffRatio * pt.w + noiseVal * ampRatio * pt.w;
+                    // 限定偏离值以免超出外管
+                    offset = Math.max(-pt.w * 0.45, Math.min(pt.w * 0.45, offset));
+                    linePts.push({x: pt.x + pt.nx * offset, y: pt.y + pt.ny * offset});
+                }
+                
+                if (l % 2 !== 0) {
+                    linePts.reverse();
+                }
+                
+                // 平滑连接端点（连起来的效果）
+                if (l > 0) {
+                    let p0 = {x: lastX, y: lastY};
+                    let p1 = linePts[0];
+                    let steps = 6;
+                    let refPt = (l % 2 !== 0) ? dPts[dPts.length - 1] : dPts[0];
+                    let t_out = (l % 2 !== 0) ? {x: refPt.ny, y: -refPt.nx} : {x: -refPt.ny, y: refPt.nx};
+                    
+                    for (let i = 1; i < steps; i++) {
+                        let theta = (i / steps) * Math.PI;
+                        let cx = (p0.x + p1.x) / 2;
+                        let cy = (p0.y + p1.y) / 2;
+                        let vx = p0.x - cx;
+                        let vy = p0.y - cy;
+                        let r = Math.sqrt(vx * vx + vy * vy);
+                        target.vertex(
+                            cx + vx * Math.cos(theta) + t_out.x * r * Math.sin(theta),
+                            cy + vy * Math.cos(theta) + t_out.y * r * Math.sin(theta)
+                        );
+                    }
+                }
+                
+                for (let i = 0; i < linePts.length; i++) {
+                    target.vertex(linePts[i].x, linePts[i].y);
+                    // 记录起始点
+                    if (l === 0 && i === 0) {
+                        firstX = linePts[i].x;
+                        firstY = linePts[i].y;
+                    }
+                }
+                
+                lastX = linePts[linePts.length - 1].x;
+                lastY = linePts[linePts.length - 1].y;
+            }
+            
+            // 平滑连接起点，使得内线完全形成闭合回路
+            if (numLines > 1) {
+                let p0 = {x: lastX, y: lastY};
+                let p1 = {x: firstX, y: firstY};
+                let steps = 6;
+                let refPt = dPts[0];
+                let t_out = {x: -refPt.ny, y: refPt.nx}; // 起点的向外切线
+                
+                for (let i = 1; i < steps; i++) {
+                    let theta = (i / steps) * Math.PI;
+                    let cx = (p0.x + p1.x) / 2;
+                    let cy = (p0.y + p1.y) / 2;
+                    let vx = p0.x - cx;
+                    let vy = p0.y - cy;
+                    let r = Math.sqrt(vx * vx + vy * vy);
+                    target.vertex(
+                        cx + vx * Math.cos(theta) + t_out.x * r * Math.sin(theta),
+                        cy + vy * Math.cos(theta) + t_out.y * r * Math.sin(theta)
+                    );
+                }
+            }
+            target.endShape(target.CLOSE);
+        }
+        target.pop();
+    }
+
+    function drawBgToTarget(target) {
+        target.background(bgColor);
+    }
+
+    function exportHighRes(format) {
+        let exportW = 3508, scaleFact = exportW / width; 
+        let pg = createGraphics(exportW, height * scaleFact);
+        let pgStrokes = createGraphics(exportW, height * scaleFact);
+        if (format !== 'png') { drawBgToTarget(pg); } else { pg.clear(); }
+        pgStrokes.scale(scaleFact); 
+        for (let p of paths) drawStyledPath(p, pgStrokes);
+        pg.image(pgStrokes, 0, 0);
+        save(pg, `artwork_${Date.now()}.${format}`); pg.remove(); pgStrokes.remove();
+    }
+
+    function exportSVG() {
+        let svgContent = "";
+        paths.forEach((pObj) => {
+            if (pObj.points.length < 2) return;
+            randomSeed(pObj.seed); noiseSeed(pObj.seed);
+            const color = pObj.color, bSize = pObj.weight, bRough = pObj.rough;
+            if (pObj.mode === 'checker') {
+                let g = bSize, r = bSize * 0.7, pSet = new Set(), rects = "";
+                for (let i=1; i<pObj.points.length; i++) {
+                    let p1 = pObj.points[i-1], p2 = pObj.points[i], dV = dist(p1.x, p1.y, p2.x, p2.y);
+                    if (dV === 0) continue;
+                    for(let j=0; j<=dV; j+=2){ 
+                        let curX = lerp(p1.x, p2.x, j/dV), curY = lerp(p1.y, p2.y, j/dV);
+                        for(let ox = -r; ox <= r; ox += g){
+                            for(let oy = -r; oy <= r; oy += g){
+                                let gx = Math.floor((curX + ox)/g), gy = Math.floor((curY + oy)/g);
+                                if((gx + gy) % 2 === 0) {
+                                    let key = `${gx},${gy}`;
+                                    if (!pSet.has(key)) { rects += `<rect x="${(gx*g).toFixed(2)}" y="${(gy*g).toFixed(2)}" width="${g.toFixed(2)}" height="${g.toFixed(2)}" fill="${color}" />`; pSet.add(key); }
+                                }
+                            }
+                        }
+                    }
+                }
+                svgContent += `<g>${rects}</g>`;
+            } else if (pObj.mode === 'rail') {
+                let d = `M${pObj.points[0].x.toFixed(2)},${pObj.points[0].y.toFixed(2)}`;
+                for(let i=1; i<pObj.points.length; i++) d += ` L${pObj.points[i].x.toFixed(2)},${pObj.points[i].y.toFixed(2)}`;
+                svgContent += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${bSize.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" />`;
+                svgContent += `<path d="${d}" fill="none" stroke="${bgColor}" stroke-width="${(bSize * bRough).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" />`;
+            } else if (['ribbon', 'marker'].includes(pObj.mode)) {
+                let d = `M${pObj.points[0].x.toFixed(2)},${pObj.points[0].y.toFixed(2)}`;
+                for(let i=1; i<pObj.points.length; i++) d += ` L${pObj.points[i].x.toFixed(2)},${pObj.points[i].y.toFixed(2)}`;
+                let cap = (pObj.mode === 'marker') ? 'square' : 'round';
+                svgContent += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${bSize.toFixed(2)}" stroke-linecap="${cap}" stroke-linejoin="round" />`;
+            } else if (pObj.mode === 'pixel') {
+                let pSet = new Set(), rects = "";
+                for (let i=1; i<pObj.points.length; i++) {
+                    let p1 = pObj.points[i-1], p2 = pObj.points[i], dV = dist(p1.x, p1.y, p2.x, p2.y);
+                    if (dV === 0) continue;
+                    for(let j=0; j<=dV; j+=1){
+                        let cx = lerp(p1.x, p2.x, j/dV), cy = lerp(p1.y, p2.y, j/dV);
+                        let px = Math.floor(cx / bSize) * bSize;
+                        let py = Math.floor(cy / bSize) * bSize;
+                        let key = `${px},${py}`;
+                        if (!pSet.has(key)) {
+                            rects += `<rect x="${px.toFixed(2)}" y="${py.toFixed(2)}" width="${bSize.toFixed(2)}" height="${bSize.toFixed(2)}" fill="${color}" />`;
+                            pSet.add(key);
+                        }
+                    }
+                }
+                svgContent += `<g>${rects}</g>`;
+            } else if (pObj.mode === 'flat') {
+                let ang = PI/4, dx = cos(ang)*(bSize/2), dy = sin(ang)*(bSize/2), fd = "";
+                for (let i = 1; i < pObj.points.length; i++) {
+                    let p1 = pObj.points[i-1], p2 = pObj.points[i];
+                    fd += `M${(p1.x-dx).toFixed(2)},${(p1.y+dy).toFixed(2)} L${(p1.x+dx).toFixed(2)},${(p1.y-dy).toFixed(2)} L${(p2.x+dx).toFixed(2)},${(p2.y-dy).toFixed(2)} L${(p2.x-dx).toFixed(2)},${(p2.y+dy).toFixed(2)} Z `;
+                }
+                svgContent += `<path d="${fd}" fill="${color}" />`;
+            } else if (pObj.mode === 'beads' || pObj.mode === 'blocky') {
+                let spacing = bRough <= 0.5 ? bSize * (0.1 + bRough * 1.6) : bSize * (0.9 + (bRough - 0.5) * 4.2);
+                let lastD = pObj.points[0], shp = ""; 
+                const addS = (p) => {
+                    if (pObj.mode === 'beads') shp += `<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${(bSize/2).toFixed(2)}" fill="${color}" />`;
+                    else shp += `<rect x="${(p.x-bSize/2).toFixed(2)}" y="${(p.y-bSize/2).toFixed(2)}" width="${bSize.toFixed(2)}" height="${bSize.toFixed(2)}" fill="${color}" />`;
+                };
+                addS(lastD); for (let i=1; i<pObj.points.length; i++) { if (dist(lastD.x, lastD.y, pObj.points[i].x, pObj.points[i].y) > spacing) { addS(pObj.points[i]); lastD = pObj.points[i]; } }
+                svgContent += `<g>${shp}</g>`;
+            } else if (pObj.mode === 'ink') {
+                let lW = bSize, ln = ""; for (let i = 1; i < pObj.points.length; i++) {
+                    let dV = dist(pObj.points[i-1].x, pObj.points[i-1].y, pObj.points[i].x, pObj.points[i].y);
+                    lW = lerp(lW, max(bSize*0.2, bSize-(dV*0.8)), 0.4);
+                    ln += `<line x1="${pObj.points[i-1].x.toFixed(2)}" y1="${pObj.points[i-1].y.toFixed(2)}" x2="${pObj.points[i].x.toFixed(2)}" y2="${pObj.points[i].y.toFixed(2)}" stroke="${color}" stroke-width="${lW.toFixed(2)}" stroke-linecap="round" />`;
+                }
+                svgContent += `<g>${ln}</g>`;
+            } else if (pObj.mode === 'wire') {
+                let numWires = Math.floor(map(bRough, 0, 1, 2, 6));
+                let sW = Math.max(1, bSize * 0.1);
+                for (let w = 0; w < numWires; w++) {
+                    let d = "";
+                    for (let i = 0; i < pObj.points.length; i++) {
+                        let p = pObj.points[i];
+                        let nx = p.x + (noise(i * 0.1, w * 100) - 0.5) * bSize;
+                        let ny = p.y + (noise(i * 0.1 + 1000, w * 100) - 0.5) * bSize;
+                        if(i === 0) d += `M${nx.toFixed(2)},${ny.toFixed(2)}`;
+                        else d += ` L${nx.toFixed(2)},${ny.toFixed(2)}`;
+                    }
+                    if (d) svgContent += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${sW.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" />`;
+                }
+            } else if (pObj.mode === 'scribble') {
+                let sW = Math.max(1, bSize * 0.02);
+                let sPts = getSmoothedPath(pObj.points);
+                let dPts = getDPts(sPts, window);
+                let loop = getDoubleLineLoop(dPts, window, bSize * 0.45, bRough);
+                if (loop.length > 0) {
+                    let d = `M${loop[0].x.toFixed(2)},${loop[0].y.toFixed(2)}`;
+                    for(let i=1; i<loop.length; i++) d += ` L${loop[i].x.toFixed(2)},${loop[i].y.toFixed(2)}`;
+                    d += ` Z`;
+                    svgContent += `<path d="${d}" fill="${color}" stroke="${color}" stroke-width="${sW.toFixed(2)}" stroke-linejoin="round" />`;
+                }
+            } else if (pObj.mode === 'tube') {
+                let sPts = getSmoothedPath(pObj.points);
+                if (sPts.length < 2) return;
+                
+                let dPts = getDPts(sPts, window);
+                if (dPts.length < 2) return;
+                
+                for (let i = 0; i < dPts.length; i++) {
+                    let pt = dPts[i];
+                    let n = noise(pt.dist * 0.01, pObj.seed || 0);
+                    pt.w = bSize * map(n, 0, 1, 0.4, 1.3);
+                }
+                
+                let baseTubeSVG = "";
+                for (let i = 1; i < dPts.length; i++) {
+                    baseTubeSVG += `<line x1="${dPts[i-1].x.toFixed(2)}" y1="${dPts[i-1].y.toFixed(2)}" x2="${dPts[i].x.toFixed(2)}" y2="${dPts[i].y.toFixed(2)}" stroke="${color}" stroke-width="${dPts[i].w.toFixed(2)}" stroke-linecap="round" />`;
+                }
+                svgContent += `<g>${baseTubeSVG}</g>`;
+                
+                let sW = Math.max(1, Math.pow(bSize, 0.8) * 0.07);
+                
+                let numLines = 2;
+                let sd = "";
+                let lastX = null, lastY = null;
+                let firstX = null, firstY = null;
+                
+                for (let l = 0; l < numLines; l++) {
+                    let phase = random(1000);
+                    let baseOffRatio = (random() - 0.5) * 0.6;
+                    let freq = 0.02 + bRough * 0.05;
+                    let ampRatio = 0.1 + bRough * 0.2;
+                    
+                    let linePts = [];
+                    for (let i = 0; i < dPts.length; i++) {
+                        let pt = dPts[i];
+                        let noiseVal = (noise(pt.dist * freq, phase) - 0.5) * 2;
+                        let offset = baseOffRatio * pt.w + noiseVal * ampRatio * pt.w;
+                        offset = Math.max(-pt.w * 0.45, Math.min(pt.w * 0.45, offset));
+                        linePts.push({x: pt.x + pt.nx * offset, y: pt.y + pt.ny * offset});
+                    }
+                    
+                    if (l % 2 !== 0) {
+                        linePts.reverse();
+                    }
+                    
+                    if (l > 0) {
+                        let p0 = {x: lastX, y: lastY};
+                        let p1 = linePts[0];
+                        let steps = 6;
+                        let refPt = (l % 2 !== 0) ? dPts[dPts.length - 1] : dPts[0];
+                        let t_out = (l % 2 !== 0) ? {x: refPt.ny, y: -refPt.nx} : {x: -refPt.ny, y: refPt.nx};
+                        
+                        for (let i = 1; i < steps; i++) {
+                            let theta = (i / steps) * Math.PI;
+                            let cx = (p0.x + p1.x) / 2;
+                            let cy = (p0.y + p1.y) / 2;
+                            let vx = p0.x - cx;
+                            let vy = p0.y - cy;
+                            let r = Math.sqrt(vx * vx + vy * vy);
+                            let arcX = cx + vx * Math.cos(theta) + t_out.x * r * Math.sin(theta);
+                            let arcY = cy + vy * Math.cos(theta) + t_out.y * r * Math.sin(theta);
+                            sd += ` L${arcX.toFixed(2)},${arcY.toFixed(2)}`;
+                        }
+                    }
+                    
+                    for (let i = 0; i < linePts.length; i++) {
+                        if (l === 0 && i === 0) {
+                            sd += `M${linePts[i].x.toFixed(2)},${linePts[i].y.toFixed(2)}`;
+                            firstX = linePts[i].x;
+                            firstY = linePts[i].y;
+                        } else {
+                            sd += ` L${linePts[i].x.toFixed(2)},${linePts[i].y.toFixed(2)}`;
+                        }
+                    }
+                    
+                    lastX = linePts[linePts.length - 1].x;
+                    lastY = linePts[linePts.length - 1].y;
+                }
+                
+                // 平滑连接起点闭合 SVG
+                if (numLines > 1) {
+                    let p0 = {x: lastX, y: lastY};
+                    let p1 = {x: firstX, y: firstY};
+                    let steps = 6;
+                    let refPt = dPts[0];
+                    let t_out = {x: -refPt.ny, y: refPt.nx};
+                    
+                    for (let i = 1; i < steps; i++) {
+                        let theta = (i / steps) * Math.PI;
+                        let cx = (p0.x + p1.x) / 2;
+                        let cy = (p0.y + p1.y) / 2;
+                        let vx = p0.x - cx;
+                        let vy = p0.y - cy;
+                        let r = Math.sqrt(vx * vx + vy * vy);
+                        let arcX = cx + vx * Math.cos(theta) + t_out.x * r * Math.sin(theta);
+                        let arcY = cy + vy * Math.cos(theta) + t_out.y * r * Math.sin(theta);
+                        sd += ` L${arcX.toFixed(2)},${arcY.toFixed(2)}`;
+                    }
+                    sd += ` Z`; // 完全闭合
+                }
+                
+                if (sd) {
+                    svgContent += `<path d="${sd}" fill="none" stroke="${bgColor}" stroke-width="${sW.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" />`;
+                }
+            }
+        });
+        const fullSVG = `<?xml version="1.0" encoding="UTF-8"?><svg width="700" height="933" viewBox="0 0 700 933" xmlns="http://www.w3.org/2000/svg" fill="none">${svgContent}</svg>`;
+        const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([fullSVG], {type: 'image/svg+xml'})); link.download = `artwork_${Date.now()}.svg`; link.click();
+    }
+
+    function setMode(mode) { brushMode = mode; document.querySelectorAll('.btn-ui').forEach(btn => { btn.classList.toggle('active', btn.id === 'mode-' + mode); }); }
+    
+    function clearCanvas() { 
+        paths = []; 
+        redrawPaths(); 
+    }
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
